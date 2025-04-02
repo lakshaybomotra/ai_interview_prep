@@ -13,6 +13,7 @@ import {useRouter} from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase/client";
 import { signIn, signUp } from "@/lib/actions/auth.actions";
+import { useState } from "react";
 
 const authFormSchema = (type: FormType) => {
     return z.object({
@@ -24,6 +25,8 @@ const authFormSchema = (type: FormType) => {
 
 const AuthForm = ({type}: { type: FormType }) => {
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+
     const formSchema = authFormSchema(type);
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -35,6 +38,7 @@ const AuthForm = ({type}: { type: FormType }) => {
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        setIsLoading(true);
         try {
             if (type === 'sign-up') {
                 const { name, email, password } = values;
@@ -77,6 +81,8 @@ const AuthForm = ({type}: { type: FormType }) => {
         } catch (error) {
             console.error(error);
             toast.error(`There was an error: ${error}`);
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -99,9 +105,16 @@ const AuthForm = ({type}: { type: FormType }) => {
                                    type='email'/>
                         <FormField control={form.control} name="password" label="Password"
                                    placeholder="Enter Your Password" type='password'/>
-                        <Button className='btn' type="submit">
-                            {isSignIn ? "Sign In" : "Create an Account"}
-                        </Button>
+                        <Button className='btn' type="submit" disabled={isLoading}>
+                        {isLoading ? (
+                            <>
+                                <span className="loading loading-spinner"></span>
+                                {isSignIn ? "Signing In..." : "Creating Account..."}
+                            </>
+                        ) : (
+                            isSignIn ? "Sign In" : "Create an Account"
+                        )}
+                    </Button>
                     </form>
                 </Form>
 
